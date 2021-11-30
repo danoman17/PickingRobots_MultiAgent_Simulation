@@ -27,13 +27,13 @@ class Robot(Agent):
 
     def step(self):
 
-        # Usamos los vecinos de la posición actual considerando las diagonales
+        # we use the current neighbors 
         next_moves = self.model.grid.get_neighborhood(self.pos, moore=True)
-        # Seleccionamos alguno de los vecinos de forma aleatoria y nos movemos a él
+        # we chose randomly some of these
         next_move = self.random.choice(next_moves)
 
 
-        # checamos si está lleno el stack del robot actual
+        # check if the current cargo of a robot is full
         print("en stack del robot actual: ", self.numberBoxesStack)
         if self.numberBoxesStack == 5:
             isfullStack = True
@@ -41,101 +41,109 @@ class Robot(Agent):
             isfullStack = False
         
 
-        if not isfullStack:
+        if isfullStack == False:
             print("no estoy lleno")
-            self.leavedBoxes = False 
-            isClean = self.pickAction()
-            print("clean: ", isClean)
-            
-            if self.selfMovents >= self.model.time:
-                print("Time's over, total movents: ", self.selfMovents * self.model.robots)
-            if(self.model.boxNo == 0 and self.isAllRobotsEmpty()):
-                print("All boxes have been picked up, adding up to: ", self.getTotalMovements(), " of total movents")
-            if( self.selfMovents < self.model.time and isClean ):
-                self.selfMovents += 1
+
+            self.leavedBoxes = False # animation purposes
+            isTileEmpty = self.pickAction() # we check the curent tile is empty or not
+
+            if self.selfMovents >= self.model.time: # we finished if the time is overpassed
+                print("Time's over, total movents: ", self.selfMovents * self.model.robotsNo)
+            if(self.model.boxNo == 0 and self.isAllRobotsEmpty()): # we finished if there aren't any boxes left and each robot is empty
+                print("All boxes have been picked up, adding up to: ", self.getTotalMovements(), " total movents")
+            if( self.selfMovents < self.model.time and isTileEmpty ): # but if the time isn't over and the current tile is empty
+                self.selfMovents += 1 # encrease self movemts of the robot
                 self.model.grid.move_agent(self, next_move)
         else:
             print("estoy lleno")
 
-            pathToStack = self.getPathToClosestTileStack(self.allocatedStack)
+
+            pathToStack = self.getPathToClosestTileStack() # we calculate and recalculate the shortest path
             print("path: ",pathToStack, "len: ", len(pathToStack), "auxIndex: ", self.auxIndex)
-            if( self.auxIndex < len(pathToStack) ):
+            if( self.auxIndex < len(pathToStack) ): 
                 next_move = pathToStack[self.auxIndex]
-                self.auxIndex = 1
-                self.model.grid.move_agent(self, next_move)
-            else:
+                self.auxIndex = 1 # always select the second position due to the curent position is the first (index:0)
+                self.model.grid.move_agent(self, next_move) #move to second position in our path array
+            else: # when we get in here, we left the curent picked boxes by the robot in the tile 
                 self.auxIndex = 0
                 self.numberBoxesStack = 0
-                print("dejo cajas xd")
-                self.leaveBoxes()
+                self.leaveBoxes() # we call our function to do the action mentioned previuosly
                 self.leavedBoxes = True
-                self.assignNewStack()
+                self.assignNewStack() # finally, we assiged other stack for the curent robot.
             
-            isClean = True
+            isTileEmpty = True # change this value so the robot will be able to repeat the cycle. 
 
 
 
+    #function that helps us by probe if the current tile is empty or not
     def pickAction(self):
-        listTiles = self.model.grid.get_cell_list_contents([self.pos])
+
+        listTiles = self.model.grid.get_cell_list_contents([self.pos]) # we obtain the current tile member/s
 
         for tile in listTiles:
 
-            if self.model.boxNo == 0:
-                if self.numberBoxesStack == 0:
-                    self.empty = True
+            if self.model.boxNo == 0: 
+                 # if there aren't any boxes to be picked up...   
+                if self.numberBoxesStack == 0: # and we got no robots with box so far
+                    self.empty = True # we marked that robot as empty
                     return False
-                elif self.numberBoxesStack != 0:
-                    self.createArrayOfNonFullStack()
-                    self.goToEmptyTileStack()
+                elif self.numberBoxesStack != 0: # but if the robot still have boxes
+                    self.showArrayOfNonFullStack() # we show how many stacks didn't filled up 
+                    self.goToEmptyTileStack() # we go ahead to the new empty stack
 
-            if (tile.tileType == "Box"):
+            if (tile.tileType == "Box"): # if the current tile is a Box
 
-                tile.clean = True
-                tile.assignStackPosX = self.allocatedStack[0]
-                tile.assignStackPosY = self.allocatedStack[1]
-                tile.changeColor()
-                self.pickedBoxes += 1
-                self.numberBoxesStack += 1
-                tile.inStack = self.numberBoxesStack
+                tile.clean = True # we clean/picked the tile
+                #tile.assignStackPosX = self.allocatedStack[0]
+                #tile.assignStackPosY = self.allocatedStack[1]
+                tile.changeColor() # doing so, we change the appereance of the tile and it's own attributes
+                self.pickedBoxes += 1 # we increment the global counter for picked boxes
+                self.numberBoxesStack += 1 # we increment the curent cargo quantity 
+                #tile.inStack = self.numberBoxesStack
                 print("Bloques recogidos: ", self.numberBoxesStack)
-                self.model.boxNo -= 1
+                self.model.boxNo -= 1 # we decrease the number of total boxes
                 print("bloques restantes: ", self.model.boxNo)
                 return False
             else:
                 return True
     
+    #function that calculate the total numbers of movents done by the robots
     def getTotalMovements(self):
         movs = 0
         for robot in self.model.robsArray:
             movs += robot.selfMovents
         return movs
 
+    # check if all robots are empty
     def isAllRobotsEmpty(self):
         for robot in self.model.robsArray:
             if robot.empty == False:
                 return False
         return True
     
-
+    #function that helps us to leave the cargo in a stack tile
     def leaveBoxes(self):
         listTiles = self.model.grid.get_cell_list_contents([self.pos])
         for tile in listTiles:
             if( tile.tileType == "Stack"):
-                tile.boxesInTile = 5
+                tile.boxes = 5
                 self.numberBoxesStack = 0
                 self.auxIndex = 0
 
+    # function that helps us to assign another stacktile due to the robot disassemble the cargo in. 
     def assignNewStack(self):
         if( len( self.model.stacksPos ) > 0 ):
-            stackIndex = self.random.randint(0, len( self.model.stacksPos ) - 1)
-            tupleOfStack = self.model.stacksPos[stackIndex]
+            stackIndex = self.random.randint(0, len( self.model.stacksPos ) - 1) # we select radomly another stack to be assign from our stack array 
+            tupleOfStack = self.model.stacksPos[stackIndex] # we create a tuple, with new coords
 
-            self.allocatedStack = tupleOfStack
-            del self.model.stacksPos[stackIndex]
+            self.allocatedStack = tupleOfStack # reassigned the new coords and the new stack aswell
+            del self.model.stacksPos[stackIndex] # we delete that stack from the original array
 
     
      #funcion auxiliar que saca la ruta hacia el stack mas cercano
-    def getPathToClosestTileStack(self, path):
+    
+    # Function that calculates the shortest path to a assigned stackTile
+    def getPathToClosestTileStack(self):
       grid = PathGrid(matrix=self.model.matrix)
       #print(self.model.matrix)
       grid.cleanup()
@@ -147,19 +155,20 @@ class Robot(Agent):
       path, runs = finder.find_path(start, end, grid)
       return path
         
-
+    # Function that calculates the shortest path to a empty stackTile
     def getPathToEmptyTileStack(self, stack):
 
-        print(self.model.matrix)
-        grid.cleanup()
-        
+        grid = PathGrid(matrix=self.model.matrix)
+        #print(self.model.matrix)
+        grid.cleanup()        
         start = grid.node( self.pos[0], self.pos[1] )
         end = grid.node( stack.pos[0], stack.pos[1] )
         finder = AStarFinder( diagonal_movement=DiagonalMovement.never )
         path, runs = finder.find_path(start, end, grid)
         return path
 
-    def createArrayOfNonFullStack(self):
+    # delete and show from original array of stacks, those stacks that haven't filled yet
+    def showArrayOfNonFullStack(self):
         indexAux = 0
         for stack in self.model.arrStacks:
             if stack.full:
@@ -169,36 +178,42 @@ class Robot(Agent):
         for stack in self.model.arrStacks:
             print("Stacks without been filled yet: ", stack.boxes, " pos: ", stack.pos)
 
+    # function that calcualtes the path and lead to the new empty stack
     def goToEmptyTileStack(self):
+        
         if ( len(self.model.arrStacks) > 0 ):
-            path = self.getPathToEmptyTileStack(self.model.arrStacks[0])
-            if( self.auxIndex < len( path ) ):
+            path = self.getPathToEmptyTileStack(self.model.arrStacks[0]) #we calculate/recalculate the path 
+            if( self.auxIndex < len( path ) ): # if we get in here, we haven't arrive to the destination tileStack
                 next_move = path[self.auxIndex]
-                self.auxIndex += 1
-                self.model.grid.move_agent(self, next_move)
-            else:
+                self.auxIndex = 1  # we alwsays took the second coord due to the first (index:0) is the curent position
+                self.model.grid.move_agent(self, next_move) 
+            else: # when we get in here when we arrive to the tile
                 self.auxIndex = 0
-                self.leaveMissingBoxes()
+                self.leaveMissingBoxes() # we left the boxes there
     
+    #function that helps us to decide, if the robot could leave the cargo in a tileStack
     def leaveMissingBoxes(self):
+
+        # we select the agent types at the current tile
         listTiles = self.model.grid.get_cell_list_contents([self.pos])
 
         for tile in listTiles:
+
             if( tile.tileType == "Stack" ) :
                 if( tile.boxes < 5 ):
                     if( ( tile.boxes + self.numberBoxesStack ) < 5 ):
-                        tile.boxes = tile.boxes + self.numberBoxesStack
-                        self.empty = True
-                        self.numberBoxesStack = 0
+                        tile.boxes = tile.boxes + self.numberBoxesStack # reassign the new value of boxes in that stack
+                        self.empty = True # we disassemble the cargo 
+                        self.numberBoxesStack = 0 # we restart the curent cargo
                     elif ( ( tile.boxes + self.numberBoxesStack ) == 5  ):
-                        tile.boxes = 5
-                        self.numberBoxesStack = 0
+                        tile.boxes = 5 # we fill the current tileStack
+                        self.numberBoxesStack = 0 #  we restart the curent cargo
+                        tile.full = True # and we set ass fill the current tile
+                    else: # if we get in here, that means we got a spare boxes
+                        spareBoxes = ( tile.boxes + self.numberBoxesStack ) - 5 # we calculate the spare
+                        tile.boxes = 5 # we fill the curent tile
                         tile.full = True
-                    else:
-                        spareBoxes = ( tile.boxes + self.numberBoxesStack ) - 5
-                        tile.boxes = 5
-                        tile.full = True
-                        self.numberBoxesStack = spareBoxes
+                        self.numberBoxesStack = spareBoxes #we left the robot cargo the boxes spare
                 else:
                     print("shouldn't get here")
 
@@ -208,9 +223,6 @@ class Box(Agent):
         super().__init__(model.next_id(), model)
         self.tileType = "Box"
         self.pos = pos
-        self.assignStackPosX = -1
-        self.assignStackPosY = -1
-        self.inStack = -1
         self.clean = False
 
     def changeColor(self):
@@ -236,28 +248,27 @@ class Stack(Agent):
 
 class Floor(Model):
     #se asignan las variables modificables por el usuario siendo filas, columnas, robots, tiempo de ejecucion y el numero de bloques sucios
-    def __init__(self, rows =10,columns = 10, robotsNo = 1, time = 20000, boxNo = 60):
+    def __init__(self, rows =10,columns = 10, robotsNo = 4, time = 20000, boxNo = 50):
         super().__init__()
 
         self.schedule = RandomActivation(self)
 
-        self.rows = rows
-        self.columns = columns
-        self.robotsNo = robotsNo
-        self.time = time
-        self.boxNo = boxNo
-        self.Stacks = (boxNo // 5)
-  
+        self.rows = rows # Num of rows
+        self.columns = columns # Num of columns
+        self.robotsNo = robotsNo # Num of robots
+        self.matrix = [] # variable that store our grid
+        self.boxNo = boxNo # Num of boxes
+        self.Stacks = (boxNo // 5) # we calculate the number of StackTiles by dividing the num of box by 5
+        self.stacksPos = [] #variable that stores the stack positions
+        self.robsArray = [] # arrasy to store our robots
+        self.arrStacks = [] # array to store the stacksTiles
+        self.time = time # max time to execute the simulation
 
-        self.grid = MultiGrid(self.columns, self.rows, torus=False)
+        self.grid = MultiGrid(self.columns, self.rows, torus=False) 
 
-        self.matrix = []
-        self.stacksPos = []
-        self.arrStacks = []
-        self.robsArray = []
-        #se crea una matriz de ceros para identificar las casillas sucias y limpias
+        #create a matrix full of zeros.
         self.createZeroMatrix()
-        #se crean los robots y bloques tanto limpios como sucios para colocarse en el tablero
+        #We create the stacksTiles, robots, boxes and normal Tiles in our grid
         self.setStacks()
         self.setRobot()
         self.setBox()
