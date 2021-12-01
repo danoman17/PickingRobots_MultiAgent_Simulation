@@ -19,7 +19,7 @@ class Robot(Agent):
         self.selfMovents = 0 # no. of movements that this robot is making
         self.pickedBoxes = 0 # no. of picked boxes since the start of the simulation individualy
         self.auxIndex = 0 # Auxilar index to handle the positions traversed in our path to an empty closest stack tile. 
-        self.allocatedStack = 0 # Assigned Stack tile where the robot most get the picked boxes
+        self.allocatedStack = (-1,-1) # Assigned Stack tile where the robot most get the picked boxes
         self.tileType = "Robot"
         self.empty = True # attribute that help to leave boxes in a stack tile
         self.leavedBoxes = False # attribute for APIs purposes
@@ -43,7 +43,6 @@ class Robot(Agent):
         
 
         if isfullStack == False:
-            print("no estoy lleno")
 
             self.leavedBoxes = False # animation purposes
             isTileEmpty = self.pickAction() # we check the curent tile is empty or not
@@ -58,14 +57,12 @@ class Robot(Agent):
                 self.selfMovents += 1 # encrease self movemts of the robot
                 self.model.grid.move_agent(self, next_move)
         else:
-            print("estoy lleno")
-
-
+            
             pathToStack = self.getPathToClosestTileStack() # we calculate and recalculate the shortest path
-            print("path: ",pathToStack, "len: ", len(pathToStack), "auxIndex: ", self.auxIndex)
+            #print("path: ",pathToStack, "len: ", len(pathToStack), "auxIndex: ", self.auxIndex)
             if( self.auxIndex < len(pathToStack) ): 
-                next_move = pathToStack[self.auxIndex]
                 self.auxIndex = 1 # always select the second position due to the curent position is the first (index:0)
+                next_move = pathToStack[self.auxIndex]
                 self.model.grid.move_agent(self, next_move) #move to second position in our path array
             else: # when we get in here, we left the curent picked boxes by the robot in the tile 
                 self.auxIndex = 0
@@ -97,15 +94,17 @@ class Robot(Agent):
             if (tile.tileType == "Box"): # if the current tile is a Box
 
                 tile.clean = True # we clean/picked the tile
+                #print("alocatedStackX",self.allocatedStack)
+                #print("alocatedStackY",self.allocatedStack)
                 tile.assignStackPosX = self.allocatedStack[0]
                 tile.assignStackPosY = self.allocatedStack[1]
                 tile.changeColor() # doing so, we change the appereance of the tile and it's own attributes
                 self.pickedBoxes += 1 # we increment the global counter for picked boxes
                 self.numberBoxesStack += 1 # we increment the curent cargo quantity 
                 tile.inStack = self.numberBoxesStack
-                print("Bloques recogidos: ", self.numberBoxesStack)
+                #print("Bloques recogidos: ", self.numberBoxesStack)
                 self.model.boxNo -= 1 # we decrease the number of total boxes
-                print("bloques restantes: ", self.model.boxNo)
+                #print("bloques restantes: ", self.model.boxNo)
                 return False
             else:
                 return True
@@ -151,9 +150,9 @@ class Robot(Agent):
       #print(self.model.matrix)
       grid.cleanup()
       start = grid.node(self.pos[0],self.pos[1])
-      print("start x:", self.pos[0]," y: ", self.pos[1])
+      #print("start x:", self.pos[0]," y: ", self.pos[1])
       end = grid.node(self.allocatedStack[0],self.allocatedStack[1])
-      print("end x:", self.allocatedStack[0]," y: ", self.allocatedStack[1])
+      #print("end x:", self.allocatedStack[0]," y: ", self.allocatedStack[1])
       finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
       path, runs = finder.find_path(start, end, grid)
       return path
@@ -254,7 +253,7 @@ class Stack(Agent):
 
 class Floor(Model):
     #se asignan las variables modificables por el usuario siendo filas, columnas, robots, tiempo de ejecucion y el numero de bloques sucios
-    def __init__(self, rows =10,columns = 10, robotsNo = 5, time = 20000, boxNo = 50):
+    def __init__(self, rows =10,columns = 10, robotsNo = 1, time = 20000, boxNo = 60):
         super().__init__()
 
         self.schedule = RandomActivation(self)
@@ -353,4 +352,23 @@ class Floor(Model):
             self.stacksPos.append(stack.pos)
             self.arrStacks.append(stack)
             self.schedule.add(stack)
+
+# def agent_portrayal(agent):
+#     if( agent.tileType == "Robot" ):
+#         return {"Shape": "walle.png", "Layer": 0}
+#     elif( agent.tileType == "Box" ):
+#         return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "brown", "Layer": 1}
+#     elif( agent.tileType == "stdTile"):
+#         return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "#ced4da", "Layer": 1}
+#     elif( agent.tileType == "Stack" ):
+#         if agent.boxes == 5:
+#             agent.full = True
+#             return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "green", "Layer": 1}
+#         return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "red", "Layer": 1}
+    
+# grid = CanvasGrid( agent_portrayal, 10, 10, 450, 450 )
+
+# server = ModularServer( Floor, [grid], "Store", {} )
+# server.port = 8524
+# server.launch()
     
