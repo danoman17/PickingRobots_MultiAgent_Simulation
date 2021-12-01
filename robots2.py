@@ -97,12 +97,12 @@ class Robot(Agent):
             if (tile.tileType == "Box"): # if the current tile is a Box
 
                 tile.clean = True # we clean/picked the tile
-                #tile.assignStackPosX = self.allocatedStack[0]
-                #tile.assignStackPosY = self.allocatedStack[1]
+                tile.assignStackPosX = self.allocatedStack[0]
+                tile.assignStackPosY = self.allocatedStack[1]
                 tile.changeColor() # doing so, we change the appereance of the tile and it's own attributes
                 self.pickedBoxes += 1 # we increment the global counter for picked boxes
                 self.numberBoxesStack += 1 # we increment the curent cargo quantity 
-                #tile.inStack = self.numberBoxesStack
+                tile.inStack = self.numberBoxesStack
                 print("Bloques recogidos: ", self.numberBoxesStack)
                 self.model.boxNo -= 1 # we decrease the number of total boxes
                 print("bloques restantes: ", self.model.boxNo)
@@ -227,6 +227,9 @@ class Box(Agent):
         self.tileType = "Box"
         self.pos = pos
         self.clean = False
+        self.assignStackPosX = -1
+        self.assignStackPosY = -1
+        self.inStack = -1
 
     def changeColor(self):
         self.tileType = "stdTile"
@@ -351,21 +354,3 @@ class Floor(Model):
             self.arrStacks.append(stack)
             self.schedule.add(stack)
     
-def agent_portrayal(agent):
-    if( agent.tileType == "Robot" ):
-        return {"Shape": "walle.png", "Layer": 0}
-    elif( agent.tileType == "Box" ):
-        return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "brown", "Layer": 1}
-    elif( agent.tileType == "stdTile"):
-        return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "#ced4da", "Layer": 1}
-    elif( agent.tileType == "Stack" ):
-        if agent.boxes == 5:
-            agent.full = True
-            return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "green", "Layer": 1}
-        return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "red", "Layer": 1}
-    
-grid = CanvasGrid( agent_portrayal, 10, 10, 450, 450 )
-
-server = ModularServer( Floor, [grid], "Store", {} )
-server.port = 8524
-server.launch()
