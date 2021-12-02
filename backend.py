@@ -30,7 +30,7 @@ def queryState(id):
         if type(agent) is robots2.Robot:
             listaRobots.append({"x":agent.pos[0], "y": agent.pos[1], "tipo":"Robot","cajasActualesRobot":agent.numberBoxesStack, "leavedBoxes":agent.leavedBoxes })
         elif type(agent) is robots2.Box:
-            listaRobots.append({"x":agent.pos[0], "y": agent.pos[1], "tipo":"Caja", "limpio": agent.clean, "stackAsignadoX":agent.assignStackPosX, "stackAsignadoY":agent.assignStackPosY, "inStack":agent.inStack})
+            listaRobots.append({"x":agent.pos[0], "y": agent.pos[1], "tipo":"Caja", "limpio": agent.clean, "stackAsignadoX":agent.assignedStackPosX, "stackAsignadoY":agent.assignedStackPosY, "inStack":agent.inStack})
         elif type(agent) is robots2.Stack:
             listaRobots.append({"x":agent.pos[0], "y": agent.pos[1], "tipo":"Stack", "boxesInStack": agent.boxes})
         else:

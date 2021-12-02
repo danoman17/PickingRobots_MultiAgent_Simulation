@@ -96,8 +96,8 @@ class Robot(Agent):
                 tile.clean = True # we clean/picked the tile
                 #print("alocatedStackX",self.allocatedStack)
                 #print("alocatedStackY",self.allocatedStack)
-                tile.assignStackPosX = self.allocatedStack[0]
-                tile.assignStackPosY = self.allocatedStack[1]
+                tile.assignedStackPosX = self.allocatedStack[0]
+                tile.assignedStackPosY = self.allocatedStack[1]
                 tile.changeColor() # doing so, we change the appereance of the tile and it's own attributes
                 self.pickedBoxes += 1 # we increment the global counter for picked boxes
                 self.numberBoxesStack += 1 # we increment the curent cargo quantity 
@@ -223,11 +223,11 @@ class Robot(Agent):
 class Box(Agent):
     def __init__(self, model, pos):
         super().__init__(model.next_id(), model)
-        self.tileType = "Box"
         self.pos = pos
+        self.tileType = "Box"
         self.clean = False
-        self.assignStackPosX = -1
-        self.assignStackPosY = -1
+        self.assignedStackPosX = -1
+        self.assignedStackPosY = -1
         self.inStack = -1
 
     def changeColor(self):
@@ -253,7 +253,7 @@ class Stack(Agent):
 
 class Floor(Model):
     #se asignan las variables modificables por el usuario siendo filas, columnas, robots, tiempo de ejecucion y el numero de bloques sucios
-    def __init__(self, rows =10,columns = 10, robotsNo = 1, time = 20000, boxNo = 60):
+    def __init__(self, rows =10,columns = 10, robotsNo = 5, time = 20000, boxNo = 60):
         super().__init__()
 
         self.schedule = RandomActivation(self)
@@ -353,22 +353,4 @@ class Floor(Model):
             self.arrStacks.append(stack)
             self.schedule.add(stack)
 
-# def agent_portrayal(agent):
-#     if( agent.tileType == "Robot" ):
-#         return {"Shape": "walle.png", "Layer": 0}
-#     elif( agent.tileType == "Box" ):
-#         return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "brown", "Layer": 1}
-#     elif( agent.tileType == "stdTile"):
-#         return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "#ced4da", "Layer": 1}
-#     elif( agent.tileType == "Stack" ):
-#         if agent.boxes == 5:
-#             agent.full = True
-#             return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "green", "Layer": 1}
-#         return {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Color": "red", "Layer": 1}
-    
-# grid = CanvasGrid( agent_portrayal, 10, 10, 450, 450 )
-
-# server = ModularServer( Floor, [grid], "Store", {} )
-# server.port = 8524
-# server.launch()
     
